@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using DynamicLinq.Model;
 
-namespace DynamicLinq
+namespace DynamicLinq.Old
 {
     public static class TestFilteringOnObjects
     {

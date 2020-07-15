@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace DynamicLinq
+namespace DynamicLinq.Model
 {
+    [DebuggerDisplay(@"[case id={CaseId}; type={Type}]; state={State}; status={Status}")]
     public class Case
     {
-        public string CaseId { get; private set; }
-        public string Type { get; private set; }
-        public string Status { get; private set; }
-        public string State { get; private set; }
+        public string CaseId { get; set; }
+        public string Type { get; set; }
+        public string Status { get; set; }
+        public string State { get; set; }
 
         public override string ToString()
         {

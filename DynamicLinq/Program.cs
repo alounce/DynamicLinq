@@ -10,7 +10,8 @@ namespace DynamicLinq
     {
         static void Main(string[] args)
         {
-            TestFilteringOnDictionary.Run();
+            TestConditionOnContext.Run();
+            //TestFilteringOnDictionary.Run();
             //TestFilteringOnObjects.Run();
         }    
 
