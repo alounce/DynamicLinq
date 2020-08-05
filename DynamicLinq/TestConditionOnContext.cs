@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -47,35 +47,45 @@ namespace DynamicLinq
             // where 
             // context.Key = EntityName
             // context.Value = EntityData which in turn is the IDictionary<string, object>
-            var context = new Dictionary<string, object> { { "Case", CaseDict } };
+            
             
             // TEST #1: Simple condition on 1 object
-            Test("TEST #1: Should PASS: Simple condition on 1 object...",
-                @"Case.Type = ""script""",  context);
+            var condition = @"Case.Type = ""script""";
+            var context = new Dictionary<string, object> { { "Case", CaseDict } };
+            Test("TEST #1: Should PASS: Simple condition on 1 object...", condition, context);
+            
+            
             
             // TEST #2: Two objects in the context 
+            condition = @"(Case.State = ""UT"") OR (User.Status = ""Active"")";
             context = new Dictionary<string, object> { { "Case", CaseDict },  { "User", UserDict } };
-            Test("TEST #2: Should PASS: Simple OR condition on 2 objects...",
-                @"(Case.State = ""UT"") OR (User.Status = ""Active"")", context);
+            Test("TEST #2: Should PASS: Simple OR condition on 2 objects...", condition, context);
+            
+            
             
             // TEST #3: Example that should not pass the test
-            Test("TEST #3: Should FAIL: Similar to previous",
-                @"(Case.State = ""CA"") OR (User.Status = ""Suspended"")", context);
+            condition = @"(Case.State = ""CA"") OR (User.Status = ""Suspended"")";
+            Test("TEST #3: Should FAIL: Similar to previous", condition, context);
+            
+            
             
             // TEST #4: Some more crazy thing, like 3 tested object in the context
+            condition = @"(Others.AlwaysPass = ""YES"") OR ((Case.State = ""UT"") AND (User.Status = ""Active""))";
             context = new Dictionary<string, object> { { "Case", CaseDict },  { "User", UserDict }, { "Others", CustomDict } };
-            Test("TEST #4: Should PASS: Complex condition on 3 objects...",
-                @"(Others.AlwaysPass = ""YES"") OR ((Case.State = ""UT"") AND (User.Status = ""Active""))", context);
+            Test("TEST #4: Should PASS: Complex condition on 3 objects...", condition, context);
+            
+            
             
             // TEST #5: let's change context to make left-hand side condition false... 
             ((IDictionary)context["Others"])["AlwaysPass"] = "NO";
-            Test("TEST #5: Should PASS: Similar to above but the left-hand condition is False, but right-hand is True",
-                @"(Others.AlwaysPass = ""YES"") OR (Case.State = ""UT"" AND User.Status = ""Active"")", context);
+            condition = @"(Others.AlwaysPass = ""YES"") OR (Case.State = ""UT"" AND User.Status = ""Active"")";
+            Test("TEST #5: Should PASS: Similar to above but the left-hand condition is False, but right-hand is True", condition, context);
+            
+            
             
             // TEST #6: and last one should NOT pass, because both left and right hand side condition are false
             ((IDictionary)context["User"])["Status"] = "Suspended";
-            Test("TEST #6: Should PASS: Similar to above but the left-hand condition is False, but right-hand is True",
-                @"(Others.AlwaysPass = ""YES"") OR (Case.State = ""UT"" AND User.Status = ""Active"")", context);
+            Test("TEST #6: Should PASS: Similar to above but the left-hand condition is False, but right-hand is True", condition, context);
         }
 
         private static bool Test(
@@ -85,13 +95,15 @@ namespace DynamicLinq
         {
             // Execute all logic
             // Generate params array that is used in the condition
+            //   assuming that each parameter is an IDictionary<string, object>...
             var parameters = context.Keys.Select(n => Expression.Parameter(typeof(IDictionary), n)).ToArray();
-            // Parse condition to Expression
+            // Parse condition to Expression (all magic happens here)
             var expression = DynamicExpressionParser.ParseLambda(parameters, null, condition);
             // Turn an expression to the lambda
             var lambda = expression.Compile();
-            // ...and test our context.... 
+            // ... extract our objects forming the context .... 
             var objects = context.Values.ToArray();
+            // ...and test our context.... 
             var result = lambda.DynamicInvoke(objects);
             var isPassed = Convert.ToBoolean(result);
             
